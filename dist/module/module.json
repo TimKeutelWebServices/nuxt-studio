@@ -1,7 +1,7 @@
 {
   "name": "nuxt-studio",
   "configKey": "studio",
-  "version": "1.7.0",
+  "version": "1.7.0-carlos.1",
   "docs": "https://content.nuxt.com/studio",
   "builder": {
     "@nuxt/module-builder": "1.0.2",
