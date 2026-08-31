@@ -79,8 +79,12 @@ jobs:
           fi
 
           # Keep the branch's history, but make its *content* this build's source.
-          # `dist` is untracked here, so the freshly built one is left in place.
+          # `dist` has to step aside first: it is tracked on this branch, so the
+          # reset would delete the build that was just made.
+          rm -rf "$RUNNER_TEMP/dist"
+          mv dist "$RUNNER_TEMP/dist"
           git read-tree -u --reset "$GITHUB_SHA"
+          mv "$RUNNER_TEMP/dist" dist
 
           # `dist` is gitignored for development, hence the force.
           git add -f dist
