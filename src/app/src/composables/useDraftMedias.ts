@@ -96,9 +96,36 @@ export const useDraftMedias = createSharedComposable((host: StudioHost, gitProvi
   }
 
   async function rename(items: { fsPath: string, newFsPath: string }[]) {
-    // TODO: Implement rename with external storage
+    // External storage cannot be renamed from here: the editor holds only the
+    // metadata of an external file, never its bytes, so the read/write/delete
+    // below would replace the image with a JSON document. The server owns the
+    // bytes, so it owns the move — see server/routes/medias-move.post.ts.
     if (isExternalMedia) {
-      showError('Error renaming media', 'External storage renaming must be implemented')
+      for (const { fsPath, newFsPath } of items) {
+        const response = await fetch('/__nuxt_studio/medias-move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: fsPath, to: newFsPath }),
+        })
+
+        if (!response.ok) {
+          // The handler's messages are written to be read — a host application
+          // may answer "still in use on these pages" — so they belong in the
+          // dialog rather than only in the console.
+          let message = response.statusText
+          try {
+            message = (await response.json()).message || message
+          }
+          catch {
+            // no JSON body; the status text stands
+          }
+
+          showError('Error renaming media', message)
+          return
+        }
+      }
+
+      await hooks.callHook('studio:draft:media:updated', { caller: 'useDraftMedias.rename' })
       return
     }
 

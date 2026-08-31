@@ -19,7 +19,8 @@ declare module 'hub:blob' {
   export const blob: {
     list: (options: { prefix?: string }) => Promise<BlobListResult>
     head: (pathname: string) => Promise<BlobMetadata | null>
-    put: (pathname: string, data: string | Uint8Array, options?: { contentType?: string }) => Promise<unknown>
+    get: (pathname: string) => Promise<Blob | null>
+    put: (pathname: string, data: string | Uint8Array | Blob, options?: { contentType?: string }) => Promise<unknown>
     del: (pathname: string) => Promise<unknown>
   }
 }
@@ -38,5 +39,11 @@ declare module 'nitropack' {
   interface NitroRuntimeHooks {
     'studio:auth:login': (payload: { user: StudioUser, event: H3Event }) => void
     'studio:auth:logout': (payload: { user: StudioUser, event: H3Event }) => void
+    /**
+     * A media file is about to be moved in external storage.
+     * Throw to refuse the move, or perform it and set `handled` to keep the
+     * module from touching storage itself.
+     */
+    'studio:media:move': (payload: { from: string, to: string, event: H3Event, handled: boolean }) => void
   }
 }

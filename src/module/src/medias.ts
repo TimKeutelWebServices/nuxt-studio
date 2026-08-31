@@ -18,6 +18,17 @@ export async function setExternalMediaStorage(nuxt: Nuxt, runtime: (...args: str
     route: '/__nuxt_studio/medias/**',
     handler: runtime('./server/routes/medias/[...path]'),
   })
+
+  // The verb the unstorage HTTP driver above cannot express. Its own path, not
+  // `/__nuxt_studio/medias/move`, so it cannot collide with a media file called
+  // `move`. Only external storage needs it — the default storage renames through
+  // the editor's own read/write/delete, which works there because it holds the
+  // bytes.
+  addServerHandler({
+    route: '/__nuxt_studio/medias-move',
+    method: 'post',
+    handler: runtime('./server/routes/medias-move.post'),
+  })
 }
 
 export function setDefaultMediaStorage(nuxt: Nuxt, options: ModuleOptions): Storage {
