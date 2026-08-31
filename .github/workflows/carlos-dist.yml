@@ -62,15 +62,27 @@ jobs:
           test -s dist/module/runtime/server/routes/medias-move.post.js \
             || { echo "::error::medias-move route missing from dist"; exit 1; }
 
+      # The branch is only ever appended to, never rewritten. A consumer pins a
+      # commit of it in its lockfile, and a force-push would orphan exactly that
+      # commit — an install that worked yesterday would then fail to fetch it.
       - name: Publish carlos-dist
         run: |
           set -eu
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B carlos-dist
-          # `dist` is gitignored for development, so it has to be forced in. The
-          # branch is rewritten from scratch every time rather than appended to,
-          # so it never accumulates stale files from an older build.
+
+          if git ls-remote --exit-code --heads origin carlos-dist >/dev/null 2>&1; then
+            git fetch --no-tags origin carlos-dist
+            git checkout -B carlos-dist origin/carlos-dist
+          else
+            git checkout -B carlos-dist "$GITHUB_SHA"
+          fi
+
+          # Keep the branch's history, but make its *content* this build's source.
+          # `dist` is untracked here, so the freshly built one is left in place.
+          git read-tree -u --reset "$GITHUB_SHA"
+
+          # `dist` is gitignored for development, hence the force.
           git add -f dist
           git commit -m "build: dist for ${GITHUB_SHA}"
-          git push -f origin carlos-dist
+          git push origin carlos-dist
