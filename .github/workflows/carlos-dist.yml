@@ -1,0 +1,76 @@
+# Publishes the built package to the `carlos-dist` branch.
+#
+# nuxt-studio ships only `dist/` on npm, and this fork is not published there —
+# the site installs it straight from git. Yarn 1 runs a git dependency's
+# `prepare` script but not its `prepack`, and building this package needs its
+# full dev dependencies, which is far too much to do inside the site's Docker
+# build (8 GB host, no swap, two Nuxt images already built sequentially).
+#
+# So the artifact is built here instead: `carlos-dist` is `carlos` plus one
+# commit carrying `dist/`. The site pins a commit of that branch in yarn.lock.
+name: carlos-dist
+
+on:
+  push:
+    branches: [carlos]
+  workflow_dispatch:
+
+concurrency:
+  group: carlos-dist
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run lint
+
+      - run: pnpm run test
+
+      # `prepack` is `nuxt-module-build build src/module; vite build src/app`.
+      # The module build reads `src/module/.nuxt/tsconfig.json`, which only
+      # exists after this prepare step — without it that half fails and, because
+      # the two commands are joined with `;`, the script still exits 0.
+      - run: pnpm exec nuxt-module-build prepare src/module
+
+      - run: pnpm run prepack
+
+      # Hence an explicit check: `prepack` cannot be trusted to report a failure
+      # of its first half, and a dist missing the module is a package that
+      # installs fine and does nothing.
+      - name: Verify build output
+        run: |
+          set -eu
+          for f in dist/module/module.mjs dist/app/main.js; do
+            test -s "$f" || { echo "::error::missing or empty $f"; exit 1; }
+          done
+          test -s dist/module/runtime/server/routes/medias-move.post.js \
+            || { echo "::error::medias-move route missing from dist"; exit 1; }
+
+      - name: Publish carlos-dist
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B carlos-dist
+          # `dist` is gitignored for development, so it has to be forced in. The
+          # branch is rewritten from scratch every time rather than appended to,
+          # so it never accumulates stale files from an older build.
+          git add -f dist
+          git commit -m "build: dist for ${GITHUB_SHA}"
+          git push -f origin carlos-dist
