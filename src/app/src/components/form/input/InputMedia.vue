@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { FormItem, TreeItem } from '../../../types'
 import type { PropType } from 'vue'
-import { ref, computed } from 'vue'
-import { useStudio } from '../../../composables/useStudio'
-import { isImageFile } from '../../../utils/file'
+import { ref } from 'vue'
 import { Image } from '@unpic/vue'
 
 defineProps({
@@ -15,47 +13,16 @@ defineProps({
 
 const model = defineModel<string>({ default: '' })
 
-const { mediaTree } = useStudio()
+const isMediaPickerOpen = ref(false)
 
-const popoverOpen = ref(false)
-const search = ref('')
-
-// Collect all image files from media tree
-const allMediaFiles = computed(() => {
-  const medias: TreeItem[] = []
-
-  const collectMedias = (items: TreeItem[]) => {
-    for (const item of items) {
-      if (item.type === 'file' && isImageFile(item.fsPath)) {
-        medias.push(item)
-      }
-      if (item.children) {
-        collectMedias(item.children)
-      }
-    }
+function handleMediaSelect(media: TreeItem | null) {
+  // `null` is the picker's "use an external URL" answer. It cannot arrive while
+  // the footer actions are hidden, but the field stays writable either way.
+  if (media) {
+    model.value = media.routePath || media.fsPath
   }
 
-  collectMedias(mediaTree.root.value)
-
-  return medias
-})
-
-// Filter by search and limit to 8
-const mediaFiles = computed(() => {
-  let files = allMediaFiles.value
-
-  if (search.value) {
-    const query = search.value.toLowerCase()
-    files = files.filter(file => file.name.toLowerCase().includes(query))
-  }
-
-  return files.slice(0, 8)
-})
-
-function selectMedia(media: TreeItem) {
-  model.value = media.routePath || media.fsPath
-  popoverOpen.value = false
-  search.value = ''
+  isMediaPickerOpen.value = false
 }
 </script>
 
@@ -86,75 +53,34 @@ function selectMedia(media: TreeItem) {
       class="flex-1"
     >
       <template #trailing>
-        <UPopover v-model:open="popoverOpen">
+        <UTooltip :text="$t('studio.mediaPicker.image.title')">
           <UButton
             size="xs"
             color="neutral"
             variant="none"
             icon="i-lucide-search"
             class="cursor-pointer"
+            @click="isMediaPickerOpen = true"
           />
-
-          <template #content>
-            <div class="p-3 w-80">
-              <UInput
-                v-model="search"
-                :placeholder="$t('studio.form.media.searchPlaceholder')"
-                size="xs"
-                icon="i-lucide-search"
-                autofocus
-                class="mb-3 w-full"
-              />
-
-              <div
-                v-if="mediaFiles.length === 0"
-                class="text-center py-4"
-              >
-                <UIcon
-                  name="i-lucide-image-off"
-                  class="size-8 mx-auto mb-2 text-muted"
-                />
-                <p class="text-xs text-muted">
-                  {{ search ? $t('studio.form.media.noImagesFound') : $t('studio.form.media.noImagesAvailable') }}
-                </p>
-              </div>
-
-              <div
-                v-else
-                class="grid grid-cols-4 gap-2"
-              >
-                <UTooltip
-                  v-for="media in mediaFiles"
-                  :key="media.fsPath"
-                  :text="media.name"
-                >
-                  <button
-                    type="button"
-                    class="aspect-square rounded-md cursor-pointer overflow-hidden border border-default hover:border-muted hover:ring-1 hover:ring-muted transition-all"
-                    style="background: repeating-linear-gradient(45deg, #d4d4d8 0 6px, #a1a1aa 0 12px), repeating-linear-gradient(-45deg, #a1a1aa 0 6px, #d4d4d8 0 12px); background-blend-mode: overlay; background-size: 12px 12px;"
-                    @click="selectMedia(media)"
-                  >
-                    <Image
-                      :src="media.routePath || media.fsPath"
-                      width="80"
-                      height="80"
-                      :alt="media.name"
-                      class="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                    />
-                  </button>
-                </UTooltip>
-              </div>
-
-              <p
-                v-if="mediaFiles.length > 0"
-                class="text-xs text-dimmed mt-1"
-              >
-                {{ $t('studio.form.media.imageCount', { count: mediaFiles.length, total: allMediaFiles.length }, allMediaFiles.length) }}
-              </p>
-            </div>
-          </template>
-        </UPopover>
+        </UTooltip>
       </template>
     </UInput>
+
+    <!--
+      The same picker the rich-text editor and the text fields open: folder tree,
+      search across the whole path, and paged thumbnails. It replaces a popover
+      that showed the first eight matches by *name* only — unusable when the file
+      names say nothing about what is in the picture.
+
+      `actions` is off: uploading belongs in the media library, and the field next
+      to this button already takes an external URL.
+    -->
+    <ModalMediaPicker
+      :open="isMediaPickerOpen"
+      type="image"
+      :actions="false"
+      @select="handleMediaSelect"
+      @cancel="isMediaPickerOpen = false"
+    />
   </div>
 </template>

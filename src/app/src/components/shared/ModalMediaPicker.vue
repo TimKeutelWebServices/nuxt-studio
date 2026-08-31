@@ -14,7 +14,17 @@ const ITEMS_PER_PAGE = 12
 const { mediaTree, context } = useStudio()
 const { t } = useI18n()
 
-const props = defineProps<{ open: boolean, type: 'image' | 'video' }>()
+const props = withDefaults(defineProps<{
+  open: boolean
+  type: 'image' | 'video'
+  /**
+   * Render the footer actions (upload, use an external URL).
+   * Off for pickers that only have to *find* an existing media — a media form
+   * field, where the upload lives in the media library and the field itself is
+   * already a text input for an external URL.
+   */
+  actions?: boolean
+}>(), { actions: true })
 
 const emit = defineEmits<{
   select: [image: TreeItem | null]
@@ -315,7 +325,10 @@ function isValidFileType(item: TreeItem) {
       </div>
     </template>
 
-    <template #footer>
+    <template
+      v-if="actions"
+      #footer
+    >
       <div class="flex gap-2 ml-auto">
         <UButton
           variant="solid"
