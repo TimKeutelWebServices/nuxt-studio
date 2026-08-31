@@ -1,0 +1,11 @@
+import type { DatabaseItem, MarkdownParsingOptions } from 'nuxt-studio/app';
+import type { ComarkTree } from 'comark';
+export declare function documentFromContent(id: string, content: string, options?: MarkdownParsingOptions): Promise<DatabaseItem | null>;
+export declare function documentFromYAMLContent(id: string, content: string): Promise<DatabaseItem>;
+export declare function documentFromJSONContent(id: string, content: string): Promise<DatabaseItem>;
+export declare function isComarkTree(body: unknown): body is ComarkTree;
+export declare function documentFromMarkdownContent(id: string, content: string, options?: MarkdownParsingOptions): Promise<DatabaseItem>;
+export declare function contentFromDocument(document: DatabaseItem): Promise<string | null>;
+export declare function contentFromYAMLDocument(document: DatabaseItem): Promise<string | null>;
+export declare function contentFromJSONDocument(document: DatabaseItem): Promise<string | null>;
+export declare function contentFromMarkdownDocument(document: DatabaseItem): Promise<string | null>;
