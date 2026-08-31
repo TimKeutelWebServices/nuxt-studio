@@ -38,16 +38,22 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Both of these have to happen before anything else runs. The app's tests
+      # import the module through `src/module/dist/runtime/**`, which only the
+      # stub build writes; and `prepack`'s module half reads
+      # `src/module/.nuxt/tsconfig.json`, which only this prepare step writes.
+      # This is `dev:prepare` minus the playground and docs, which nothing here
+      # needs.
+      - run: pnpm exec nuxt-module-build build --stub src/module
+      - run: pnpm exec nuxt-module-build prepare src/module
+
       - run: pnpm run lint
 
       - run: pnpm run test
 
-      # `prepack` is `nuxt-module-build build src/module; vite build src/app`.
-      # The module build reads `src/module/.nuxt/tsconfig.json`, which only
-      # exists after this prepare step — without it that half fails and, because
-      # the two commands are joined with `;`, the script still exits 0.
-      - run: pnpm exec nuxt-module-build prepare src/module
-
+      # `nuxt-module-build build src/module; vite build src/app` — joined with a
+      # `;`, so the script exits on the *second* command's status and a failure
+      # of the module half goes unreported. Hence the check below.
       - run: pnpm run prepack
 
       # Hence an explicit check: `prepack` cannot be trusted to report a failure
