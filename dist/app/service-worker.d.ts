@@ -5,17 +5,6 @@ export { }
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        aiTransform: {
-            transformSelection: (mode: string, transformFn: () => Promise<string>) => ReturnType;
-            acceptTransform: () => ReturnType;
-            declineTransform: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
         completion: {
             /**
              * Trigger AI completion manually
@@ -39,15 +28,10 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        Slot: {
-            /**
-             * Override backspace command
-             */
-            handleSlotBackspace: () => ReturnType;
-            /**
-             * Move empty trailing block out of slot on double-Enter.
-             */
-            exitEmptyTextblockFromSlot: () => ReturnType;
+        aiTransform: {
+            transformSelection: (mode: string, transformFn: () => Promise<string>) => ReturnType;
+            acceptTransform: () => ReturnType;
+            declineTransform: () => ReturnType;
         };
     }
 }
@@ -68,6 +52,61 @@ declare module '@tiptap/core' {
              * Remove current binding node
              */
             unsetBinding: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Frontmatter: {
+            handleFrontmatterBackspace: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        InlineElement: {
+            /**
+             * Toggle a InlineElement
+             */
+            setInlineElement: (tag: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Element: {
+            setElement: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Slot: {
+            /**
+             * Override backspace command
+             */
+            handleSlotBackspace: () => ReturnType;
+            /**
+             * Move empty trailing block out of slot on double-Enter.
+             */
+            exitEmptyTextblockFromSlot: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/vue-3' {
+    interface Commands<ReturnType> {
+        videoPicker: {
+            insertVideoPicker: () => ReturnType;
         };
     }
 }
@@ -104,47 +143,8 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/vue-3' {
     interface Commands<ReturnType> {
-        videoPicker: {
-            insertVideoPicker: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        Element: {
-            setElement: (tag: string, slot?: string) => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        Frontmatter: {
-            handleFrontmatterBackspace: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/vue-3' {
-    interface Commands<ReturnType> {
         imagePicker: {
             insertImagePicker: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        InlineElement: {
-            /**
-             * Toggle a InlineElement
-             */
-            setInlineElement: (tag: string) => ReturnType;
         };
     }
 }

@@ -38,6 +38,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Stamp a unique version onto this build. The module bakes `version` from
+      # package.json into the Studio app's asset URL (`/_studio-app/<version>/
+      # main.js`), which is served `immutable` for a year. Left at a constant
+      # `1.7.0-carlos.1` every rebuild overwrites that one URL and no browser
+      # that already loaded the editor ever fetches the new bundle. The run
+      # number is monotonic and always a clean integer (valid semver prerelease).
+      - name: Stamp build version
+        run: |
+          set -eu
+          VERSION="1.7.0-carlos.${{ github.run_number }}"
+          npm pkg set version="$VERSION"
+          echo "STUDIO_BUILD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "::notice::carlos-dist build version $VERSION"
+
       # Both of these have to happen before anything else runs. The app's tests
       # import the module through `src/module/dist/runtime/**`, which only the
       # stub build writes; and `prepack`'s module half reads
@@ -102,6 +116,10 @@ jobs:
           rm -rf dist
           mv "$RUNNER_TEMP/dist" dist
 
+          # The reset above restored package.json's stock version; re-stamp it so
+          # the committed source agrees with the version baked into dist/.
+          npm pkg set version="$STUDIO_BUILD_VERSION"
+
           # The dist about to be committed must be byte-for-byte the one the
           # build produced. A mismatch means a checkout or reset overwrote it.
           sha256sum -c "$RUNNER_TEMP/dist.sha256" \
@@ -109,5 +127,6 @@ jobs:
 
           # `dist` is gitignored for development, hence the force.
           git add -f dist
-          git commit -m "build: dist for ${GITHUB_SHA}"
+          git add package.json
+          git commit -m "build: dist for ${GITHUB_SHA} (${STUDIO_BUILD_VERSION})"
           git push origin carlos-dist
