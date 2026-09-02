@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useStudio } from '../composables/useStudio'
 import { StudioItemActionId, StudioFeature } from '../types'
+import type { useDraftMedias } from '../composables/useDraftMedias'
 
 const { context, mediaTree } = useStudio()
-const isUploading = ref(false)
+const uploadQueue = (mediaTree.draft as ReturnType<typeof useDraftMedias>).uploadQueue
+const isUploading = computed(() => uploadQueue.value.length > 0)
 
 const folderTree = computed(() => (mediaTree.current.value || []).filter(f => f.type === 'directory'))
 const fileTree = computed(() => (mediaTree.current.value || []).filter(f => f.type === 'file' && !f.fsPath.endsWith('.gitkeep')))
@@ -33,12 +35,10 @@ async function onFileDrop(event: DragEvent) {
   }
 
   if (event.dataTransfer?.files) {
-    isUploading.value = true
     await context.itemActionHandler[StudioItemActionId.UploadMedia]({
       parentFsPath: currentTreeItem.value.fsPath,
       files: Array.from(event.dataTransfer.files),
     })
-    isUploading.value = false
   }
 }
 </script>
@@ -55,6 +55,8 @@ async function onFileDrop(event: DragEvent) {
     </div>
 
     <div class="flex-1 relative">
+      <MediaUploadProgress :tasks="uploadQueue" />
+
       <div
         v-if="mediaTree.draft.isLoading.value"
         class="absolute inset-0 bg-primary/3 animate-pulse pointer-events-none"
