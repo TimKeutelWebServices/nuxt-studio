@@ -31,7 +31,7 @@ const sectionLabel = computed(() => {
   <Collapsible
     v-if="formItem.children"
     :label="sectionLabel"
-    :default-open="true"
+    :default-open="false"
     class="w-full mt-3"
   >
     <template #badge>
