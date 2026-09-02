@@ -59,7 +59,7 @@ const items = computed<BreadcrumbItem[]>(() => {
     -->
     <div
       dir="rtl"
-      class="breadcrumb-scroll min-w-0 overflow-x-auto"
+      class="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <div
         dir="ltr"
@@ -87,12 +87,3 @@ const items = computed<BreadcrumbItem[]>(() => {
     />
   </div>
 </template>
-
-<style scoped>
-.breadcrumb-scroll {
-  scrollbar-width: none;
-}
-.breadcrumb-scroll::-webkit-scrollbar {
-  display: none;
-}
-</style>
