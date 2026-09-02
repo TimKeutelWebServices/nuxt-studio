@@ -1,1 +1,2 @@
+import './nuxt-studio.css';
 import{a,i as s,n as o,o as r,r as i,t as m}from"./emoji-CR66Ugal.js";export{m as EMOJI_REGEXP,o as emojiList,i as emojiNameToUnicodeMap,s as getEmojiName,a as getEmojiUnicode,r as remarkEmojiPlugin};

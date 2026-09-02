@@ -20,6 +20,7 @@ export const useTree = (type: StudioFeature, host: StudioHost, draft: ReturnType
     const draftedTreeItems = draft.list.value.filter(draft => draft.status !== DraftStatus.Pristine)
     let name = 'content'
     let fsPath = '/'
+    let children = tree.value
 
     if (type === StudioFeature.Media) {
       name = 'public'
@@ -28,12 +29,25 @@ export const useTree = (type: StudioFeature, host: StudioHost, draft: ReturnType
       name = contextFolder
       fsPath = contextFolder
     }
+    else if (
+      type === StudioFeature.Content
+      && tree.value.length === 1
+      && tree.value[0]!.type === 'directory'
+    ) {
+      // Nuxt Content puts every site under one wrapper folder (content/<site>/…,
+      // picked by CONTENT_SITE), so the panel would always open on a one-entry
+      // list. Fold that single directory into the root. fsPath stays the
+      // wrapper's ("<site>"), so every descendant fsPath — and the path a new
+      // file is committed to — is unchanged.
+      fsPath = tree.value[0]!.fsPath
+      children = tree.value[0]!.children ?? []
+    }
 
     return {
       name,
       type: 'root',
       fsPath,
-      children: tree.value,
+      children,
       status: draftedTreeItems.length > 0 ? TreeStatus.Updated : null,
       prefix: null,
     } as TreeItem
@@ -50,7 +64,7 @@ export const useTree = (type: StudioFeature, host: StudioHost, draft: ReturnType
 
   const currentTree = computed<TreeItem[]>(() => {
     if (currentItem.value.type === 'root') {
-      return tree.value
+      return rootItem.value.children ?? tree.value
     }
 
     let subTree = tree.value
@@ -115,7 +129,8 @@ export const useTree = (type: StudioFeature, host: StudioHost, draft: ReturnType
 
   async function selectParentByFsPath(fsPath: string) {
     const parent = findParentFromFsPath(tree.value, fsPath)
-    await select(parent || rootItem.value)
+    // Treat the folded wrapper directory as the root (see rootItem).
+    await select(parent && parent.fsPath !== rootItem.value.fsPath ? parent : rootItem.value)
   }
 
   // Trigger tree rebuild to update files status
@@ -151,13 +166,14 @@ export const useTree = (type: StudioFeature, host: StudioHost, draft: ReturnType
 
     tree.value = buildTree(dbList, draftList, devMode.value)
 
-    // Reselect current item to update status
-    if (selectItem) {
+    // Reselect current item to update status. At root there is nothing to
+    // reselect — rootItem is a computed and picks up the rebuilt tree itself.
+    if (selectItem && currentItem.value.type !== 'root') {
       const item = findItemFromFsPath(tree.value, currentItem.value.fsPath)
       if (item) {
         await select(item)
       }
-      else if (currentItem.value.type !== 'root') {
+      else {
         await selectParentByFsPath(currentItem.value.fsPath)
       }
     }

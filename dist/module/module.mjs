@@ -7,7 +7,7 @@ import { createStorage } from 'unstorage';
 import { mediaItemFieldsFromKey } from '../../../dist/module/runtime/utils/media.js';
 import { readFile } from 'node:fs/promises';
 
-const version = "1.7.0-carlos.7";
+const version = "1.7.0-carlos.9";
 
 const VIRTUAL_MEDIA_COLLECTION_NAME = "public-assets";
 

@@ -97,29 +97,6 @@ export { }
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        completion: {
-            /**
-             * Trigger AI completion manually
-             */
-            triggerCompletion: () => ReturnType;
-            /**
-             * Accept the current completion
-             */
-            acceptCompletion: () => ReturnType;
-            /**
-             * Dismiss the current completion
-             */
-            dismissCompletion: () => ReturnType;
-        };
-    }
-    interface Storage {
-        aiCompletion: CompletionStorage;
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
         aiTransform: {
             transformSelection: (mode: string, transformFn: () => Promise<string>) => ReturnType;
             acceptTransform: () => ReturnType;
@@ -151,8 +128,35 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
+        callout: {
+            setCallout: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Element: {
+            setElement: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
         Frontmatter: {
             handleFrontmatterBackspace: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/vue-3' {
+    interface Commands<ReturnType> {
+        imagePicker: {
+            insertImagePicker: () => ReturnType;
         };
     }
 }
@@ -165,15 +169,6 @@ declare module '@tiptap/core' {
              * Toggle a InlineElement
              */
             setInlineElement: (tag: string) => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        Element: {
-            setElement: (tag: string, slot?: string) => ReturnType;
         };
     }
 }
@@ -195,11 +190,25 @@ declare module '@tiptap/core' {
 }
 
 
-declare module '@tiptap/vue-3' {
+declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        videoPicker: {
-            insertVideoPicker: () => ReturnType;
+        completion: {
+            /**
+             * Trigger AI completion manually
+             */
+            triggerCompletion: () => ReturnType;
+            /**
+             * Accept the current completion
+             */
+            acceptCompletion: () => ReturnType;
+            /**
+             * Dismiss the current completion
+             */
+            dismissCompletion: () => ReturnType;
         };
+    }
+    interface Storage {
+        aiCompletion: CompletionStorage;
     }
 }
 
@@ -224,19 +233,10 @@ declare module '@tiptap/core' {
 }
 
 
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        callout: {
-            setCallout: (tag: string, slot?: string) => ReturnType;
-        };
-    }
-}
-
-
 declare module '@tiptap/vue-3' {
     interface Commands<ReturnType> {
-        imagePicker: {
-            insertImagePicker: () => ReturnType;
+        videoPicker: {
+            insertVideoPicker: () => ReturnType;
         };
     }
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { BreadcrumbItem } from '@nuxt/ui/components/Breadcrumb.vue.d.ts'
-import type { DropdownMenuItem } from '@nuxt/ui/components/DropdownMenu.vue.d.ts'
 import { computed, unref } from 'vue'
 import { type TreeItem, TreeStatus } from '../../../types'
 import { useStudio } from '../../../composables/useStudio'
@@ -29,8 +28,11 @@ const items = computed<BreadcrumbItem[]>(() => {
 
   const breadcrumbItems: BreadcrumbItem[] = []
 
+  // Walk up to (but not including) the root. When the single content wrapper is
+  // folded into the root (useTree.ts) its fsPath is the wrapper's ("<site>"),
+  // which must not appear as its own crumb.
   let currentTreeItem: TreeItem | null = unref(currentItem.value)
-  while (currentTreeItem) {
+  while (currentTreeItem && currentTreeItem.fsPath !== rootTreeItem.fsPath) {
     const itemToSelect = currentTreeItem
     breadcrumbItems.unshift({
       label: currentTreeItem.name,
@@ -42,56 +44,55 @@ const items = computed<BreadcrumbItem[]>(() => {
     currentTreeItem = findParentFromFsPath(tree.value, currentTreeItem.fsPath)
   }
 
-  const allItems = [rootBreadcrumbItem, ...breadcrumbItems]
-
-  // Handle ellipsis dropdown
-  if (allItems.length > 3) {
-    const firstItem = allItems[0]
-    const lastItem = allItems[allItems.length - 1]
-    const hiddenItems = allItems.slice(1, -1)
-
-    const dropdownItems: DropdownMenuItem[] = hiddenItems.map(item => ({
-      label: item.label,
-      onSelect: item.onClick,
-    }))
-
-    return [
-      firstItem,
-      {
-        slot: 'ellipsis',
-        icon: 'i-lucide-ellipsis',
-        children: dropdownItems,
-      },
-      lastItem,
-    ]
-  }
-
-  return allItems
+  // Every crumb, always written out — no ellipsis collapsing.
+  return [rootBreadcrumbItem, ...breadcrumbItems]
 })
 </script>
 
 <template>
-  <div class="flex items-center gap-1 overflow-hidden">
-    <UBreadcrumb
-      :items="items"
-      color="neutral"
-      :ui="{ link: 'text-sm', list: 'gap-0.5', separatorIcon: 'size-3', linkLeadingIcon: 'size-4' }"
+  <div class="flex items-center gap-1 min-w-0">
+    <!--
+      dir="rtl" pins the scroll position to the right: when the trail is wider
+      than the bar, the current folder stays visible and the earlier crumbs
+      scroll off to the left. The inner wrapper switches back to ltr so the
+      crumbs and separators render in reading order.
+    -->
+    <div
+      dir="rtl"
+      class="breadcrumb-scroll min-w-0 overflow-x-auto"
     >
-      <template #ellipsis="{ item }: { item: DropdownMenuItem }">
-        <UDropdownMenu :items="item.children">
-          <UButton
-            :icon="item.icon"
-            color="neutral"
-            variant="link"
-            class="p-0.5"
-          />
-        </UDropdownMenu>
-      </template>
-    </UBreadcrumb>
+      <div
+        dir="ltr"
+        class="w-max"
+      >
+        <UBreadcrumb
+          :items="items"
+          color="neutral"
+          :ui="{
+            list: 'gap-0.5 flex-nowrap',
+            item: 'shrink-0',
+            link: 'text-sm',
+            linkLabel: 'whitespace-nowrap overflow-visible text-clip',
+            separatorIcon: 'size-3',
+            linkLeadingIcon: 'size-4',
+          }"
+        />
+      </div>
+    </div>
     <ItemBadge
       v-if="currentItem.status && currentItem.status !== TreeStatus.Opened"
       :status="currentItem.status"
       size="xs"
+      class="shrink-0"
     />
   </div>
 </template>
+
+<style scoped>
+.breadcrumb-scroll {
+  scrollbar-width: none;
+}
+.breadcrumb-scroll::-webkit-scrollbar {
+  display: none;
+}
+</style>

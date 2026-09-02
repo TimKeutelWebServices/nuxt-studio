@@ -103,6 +103,13 @@ jobs:
           rm -rf "$RUNNER_TEMP/dist"
           mv dist "$RUNNER_TEMP/dist"
 
+          # Discard every working-tree change the build made to a tracked file
+          # (the version stamp in package.json, chiefly). Otherwise the branch
+          # switch aborts with "local changes would be overwritten" as soon as
+          # that file also differs on carlos-dist. The stamp is re-applied from
+          # $STUDIO_BUILD_VERSION after the tree reset below.
+          git checkout -- .
+
           if git ls-remote --exit-code --heads origin carlos-dist >/dev/null 2>&1; then
             git fetch --no-tags origin carlos-dist
             git checkout -B carlos-dist origin/carlos-dist
