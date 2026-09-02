@@ -81,6 +81,15 @@ jobs:
           done
           test -s dist/module/runtime/server/routes/medias-move.post.js \
             || { echo "::error::medias-move route missing from dist"; exit 1; }
+          # An emitted .css asset means an SFC <style> block slipped in. With
+          # cssCodeSplit:false + vite-plugin-libcss that prepends a bare
+          # `import './nuxt-studio.css'` to main.js — which the browser loads as
+          # a module, gets text/css, rejects, and the editor never mounts. The
+          # app styles itself with utility classes only; keep it that way.
+          if ls dist/app/*.css >/dev/null 2>&1; then
+            echo "::error::dist/app has a .css file — remove the SFC <style> block, use utility classes"
+            exit 1
+          fi
           # Fingerprint the built app bundle so the publish step can prove it is
           # committing *this* build and not one carried over by the branch dance.
           sha256sum dist/app/main.js dist/module/module.mjs > "$RUNNER_TEMP/dist.sha256"
