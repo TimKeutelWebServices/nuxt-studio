@@ -131,63 +131,6 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        Frontmatter: {
-            handleFrontmatterBackspace: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        callout: {
-            setCallout: (tag: string, slot?: string) => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        InlineElement: {
-            /**
-             * Toggle a InlineElement
-             */
-            setInlineElement: (tag: string) => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/vue-3' {
-    interface Commands<ReturnType> {
-        imagePicker: {
-            insertImagePicker: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        Element: {
-            setElement: (tag: string, slot?: string) => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/vue-3' {
-    interface Commands<ReturnType> {
-        videoPicker: {
-            insertVideoPicker: () => ReturnType;
-        };
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
         Slot: {
             /**
              * Override backspace command
@@ -237,6 +180,63 @@ declare module '@tiptap/core' {
              * Remove the current span-style node (unwrap content)
              */
             unsetSpanStyle: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        callout: {
+            setCallout: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/vue-3' {
+    interface Commands<ReturnType> {
+        videoPicker: {
+            insertVideoPicker: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Element: {
+            setElement: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        Frontmatter: {
+            handleFrontmatterBackspace: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/vue-3' {
+    interface Commands<ReturnType> {
+        imagePicker: {
+            insertImagePicker: () => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        InlineElement: {
+            /**
+             * Toggle a InlineElement
+             */
+            setInlineElement: (tag: string) => ReturnType;
         };
     }
 }
