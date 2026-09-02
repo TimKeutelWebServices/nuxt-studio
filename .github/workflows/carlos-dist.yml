@@ -67,6 +67,9 @@ jobs:
           done
           test -s dist/module/runtime/server/routes/medias-move.post.js \
             || { echo "::error::medias-move route missing from dist"; exit 1; }
+          # Fingerprint the built app bundle so the publish step can prove it is
+          # committing *this* build and not one carried over by the branch dance.
+          sha256sum dist/app/main.js dist/module/module.mjs > "$RUNNER_TEMP/dist.sha256"
 
       # The branch is only ever appended to, never rewritten. A consumer pins a
       # commit of it in its lockfile, and a force-push would orphan exactly that
@@ -77,6 +80,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # The freshly built `dist` has to leave the work tree *before* any
+          # branch switch. It is gitignored on `carlos` but tracked on
+          # `carlos-dist`, and `git checkout` overwrites an ignored file that
+          # collides with a tracked one in the target branch (it protects only
+          # untracked-and-not-ignored files) — so checking out `carlos-dist`
+          # here was silently replacing this build with the previous one.
+          rm -rf "$RUNNER_TEMP/dist"
+          mv dist "$RUNNER_TEMP/dist"
+
           if git ls-remote --exit-code --heads origin carlos-dist >/dev/null 2>&1; then
             git fetch --no-tags origin carlos-dist
             git checkout -B carlos-dist origin/carlos-dist
@@ -84,13 +96,16 @@ jobs:
             git checkout -B carlos-dist "$GITHUB_SHA"
           fi
 
-          # Keep the branch's history, but make its *content* this build's source.
-          # `dist` has to step aside first: it is tracked on this branch, so the
-          # reset would delete the build that was just made.
-          rm -rf "$RUNNER_TEMP/dist"
-          mv dist "$RUNNER_TEMP/dist"
+          # Keep the branch's history, but make its *content* this build's
+          # source plus the dist just built.
           git read-tree -u --reset "$GITHUB_SHA"
+          rm -rf dist
           mv "$RUNNER_TEMP/dist" dist
+
+          # The dist about to be committed must be byte-for-byte the one the
+          # build produced. A mismatch means a checkout or reset overwrote it.
+          sha256sum -c "$RUNNER_TEMP/dist.sha256" \
+            || { echo "::error::dist was overwritten between build and publish"; exit 1; }
 
           # `dist` is gitignored for development, hence the force.
           git add -f dist
