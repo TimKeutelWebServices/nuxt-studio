@@ -116,7 +116,10 @@
       "fileName": "Dateiname",
       "publicPath": "Öffentlicher Pfad",
       "providerPath": "{providerName} Pfad",
-      "markdown": "Markdown"
+      "markdown": "Markdown",
+      "uploadingCount": "{count} Datei wird hochgeladen… | {count} Dateien werden hochgeladen…",
+      "uploadComplete": "Upload abgeschlossen",
+      "uploadError": "Upload fehlgeschlagen"
     },
     "aria": {
       "openActions": "Aktionen öffnen",

@@ -1,7 +1,8 @@
 import { joinURL, withLeadingSlash } from 'ufo'
-import type { DraftItem, StudioHost, MediaItem, RawFile } from '../types'
+import type { DraftItem, StudioHost, MediaItem, RawFile, MediaUploadTask } from '../types'
 import { VIRTUAL_MEDIA_COLLECTION_NAME, generateStemFromFsPath } from '../utils/media'
 import { DraftStatus } from '../types/draft'
+import { MediaUploadStatus } from '../types/media'
 import type { useGitProvider } from './useGitProvider'
 import { createSharedComposable } from './createSharedComposable'
 import { useDraftBase } from './useDraftBase'
@@ -10,6 +11,11 @@ import { getFileExtension, slugifyFileName } from '../utils/file'
 import { useHooks } from './useHooks'
 import { useError } from './useError'
 import { consola } from 'consola'
+import { reactive, ref } from 'vue'
+
+// Task stays visible long enough for the user to register it, then clears from the queue
+const UPLOAD_TASK_SUCCESS_TTL = 1500
+const UPLOAD_TASK_ERROR_TTL = 5000
 
 const logger = consola.withTag('Nuxt Studio')
 const hooks = useHooks()
@@ -32,6 +38,8 @@ export const useDraftMedias = createSharedComposable((host: StudioHost, gitProvi
   } = useDraftBase('media', host, gitProvider, storage)
 
   const isExternalMedia = host.meta.media?.external
+
+  const uploadQueue = ref<MediaUploadTask[]>([])
 
   async function createFolder(parentFsPath: string): Promise<string | undefined> {
     try {
@@ -59,24 +67,45 @@ export const useDraftMedias = createSharedComposable((host: StudioHost, gitProvi
   }
 
   async function upload(parentFsPath: string, file: File) {
+    const task = reactive<MediaUploadTask>({
+      id: `${parentFsPath}/${file.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: file.name,
+      size: file.size,
+      progress: 0,
+      status: MediaUploadStatus.Uploading,
+    })
+    uploadQueue.value.push(task)
+
     try {
-      const draftItem = await fileToDraftItem(parentFsPath, file)
+      const draftItem = await fileToDraftItem(parentFsPath, file, (progress) => {
+        task.progress = progress
+      })
       await host.media.upsert(draftItem.fsPath, draftItem.modified!)
 
       if (!isExternalMedia) {
         await create(draftItem.fsPath, draftItem.modified!)
       }
 
+      task.progress = 100
+      task.status = MediaUploadStatus.Success
+
       await hooks.callHook('studio:draft:media:updated', { caller: 'useDraftMedias.upload' })
     }
     catch (error) {
+      task.status = MediaUploadStatus.Error
+      task.error = (error as Error).message
       logger.error('Error uploading media:', error)
       showError('Error uploading media', (error as Error).message)
     }
+    finally {
+      setTimeout(() => {
+        uploadQueue.value = uploadQueue.value.filter(queuedTask => queuedTask.id !== task.id)
+      }, task.status === MediaUploadStatus.Error ? UPLOAD_TASK_ERROR_TTL : UPLOAD_TASK_SUCCESS_TTL)
+    }
   }
 
-  async function fileToDraftItem(parentFsPath: string, file: File): Promise<DraftItem<MediaItem>> {
-    const rawData = await fileToDataUrl(file)
+  async function fileToDraftItem(parentFsPath: string, file: File, onProgress?: (progress: number) => void): Promise<DraftItem<MediaItem>> {
+    const rawData = await fileToDataUrl(file, onProgress)
     const slugifiedFileName = slugifyFileName(file.name)
     const fsPath = parentFsPath !== '/' ? joinURL(parentFsPath, slugifiedFileName) : slugifiedFileName
 
@@ -162,10 +191,16 @@ export const useDraftMedias = createSharedComposable((host: StudioHost, gitProvi
     await hooks.callHook('studio:draft:media:updated', { caller: 'useDraftMedias.rename' })
   }
 
-  function fileToDataUrl(file: File): Promise<string> {
+  function fileToDataUrl(file: File, onProgress?: (progress: number) => void): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.readAsDataURL(file)
+      reader.onprogress = (event) => {
+        if (event.lengthComputable) {
+          // Reading only accounts for the first ~90%, the remaining share covers the upsert into the local database
+          onProgress?.(Math.round((event.loaded / event.total) * 90))
+        }
+      }
       reader.onload = () => resolve(reader.result as string)
       reader.onerror = error => reject(error)
     })
@@ -208,6 +243,7 @@ export const useDraftMedias = createSharedComposable((host: StudioHost, gitProvi
     selectByFsPath,
     unselect,
     upload,
+    uploadQueue,
     listAsRawFiles,
     getStatus,
     applyFormatting: () => {},
