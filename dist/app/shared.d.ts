@@ -108,28 +108,31 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        Binding: {
+        completion: {
             /**
-             * Insert a binding node
+             * Trigger AI completion manually
              */
-            setBinding: (attrs: BindingAttrs) => ReturnType;
+            triggerCompletion: () => ReturnType;
             /**
-             * Update the current binding node attributes
+             * Accept the current completion
              */
-            updateBinding: (attrs: BindingAttrs) => ReturnType;
+            acceptCompletion: () => ReturnType;
             /**
-             * Remove current binding node
+             * Dismiss the current completion
              */
-            unsetBinding: () => ReturnType;
+            dismissCompletion: () => ReturnType;
         };
+    }
+    interface Storage {
+        aiCompletion: CompletionStorage;
     }
 }
 
 
-declare module '@tiptap/core' {
+declare module '@tiptap/vue-3' {
     interface Commands<ReturnType> {
-        callout: {
-            setCallout: (tag: string, slot?: string) => ReturnType;
+        videoPicker: {
+            insertVideoPicker: () => ReturnType;
         };
     }
 }
@@ -139,6 +142,15 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         Element: {
             setElement: (tag: string, slot?: string) => ReturnType;
+        };
+    }
+}
+
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        callout: {
+            setCallout: (tag: string, slot?: string) => ReturnType;
         };
     }
 }
@@ -192,29 +204,6 @@ declare module '@tiptap/core' {
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        completion: {
-            /**
-             * Trigger AI completion manually
-             */
-            triggerCompletion: () => ReturnType;
-            /**
-             * Accept the current completion
-             */
-            acceptCompletion: () => ReturnType;
-            /**
-             * Dismiss the current completion
-             */
-            dismissCompletion: () => ReturnType;
-        };
-    }
-    interface Storage {
-        aiCompletion: CompletionStorage;
-    }
-}
-
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
         SpanStyle: {
             /**
              * Wrap selection (or insert empty) with span-style node
@@ -233,10 +222,21 @@ declare module '@tiptap/core' {
 }
 
 
-declare module '@tiptap/vue-3' {
+declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        videoPicker: {
-            insertVideoPicker: () => ReturnType;
+        Binding: {
+            /**
+             * Insert a binding node
+             */
+            setBinding: (attrs: BindingAttrs) => ReturnType;
+            /**
+             * Update the current binding node attributes
+             */
+            updateBinding: (attrs: BindingAttrs) => ReturnType;
+            /**
+             * Remove current binding node
+             */
+            unsetBinding: () => ReturnType;
         };
     }
 }
